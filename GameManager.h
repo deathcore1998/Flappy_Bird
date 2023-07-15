@@ -9,7 +9,6 @@
 #include "Math/RandomStream.h"
 #include "Kismet/GameplayStatics.h"
 #include "Background.h"
-#include "Blueprint/UserWidget.h"
 #include "Widgets/SWidget.h"
 #include "Widgets/DeclarativeSyntaxSupport.h"
 #include "Widgets/SCompoundWidget.h"
@@ -70,16 +69,17 @@ private:
 
 	void DestroyTubeFromViewport();
 
-public:
-
-	void StartSpawnTube();
-
-	UFUNCTION(BlueprintCallable)
-		void RestartGame();
-
+	friend class ABird;
 	void IncrementScore();
 
 	void ShowDeathMenu();
+
+	void StartSpawnTube();
+
+public:
+
+	UFUNCTION(BlueprintCallable)
+		void RestartGame();
 
 	UBoxComponent* GetCollisionBoxSky();
 
