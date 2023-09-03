@@ -1,76 +1,72 @@
-
 #include "Tube.h"
 
 ATube::ATube()
 {
     PrimaryActorTick.bCanEverTick = true;
 
-    TubeFlipbook = LoadObject<UPaperFlipbook>(nullptr, TEXT("/Game/FlipBook/pipe_Flipbook.pipe_Flipbook"));
+    tubeFlipbook = LoadObject<UPaperFlipbook>(nullptr, TEXT("/Game/FlipBook/pipe_Flipbook.pipe_Flipbook"));
     //Создание верхней трубы
-    TubeUp = CreateDefaultSubobject<UPaperFlipbookComponent>(TEXT("TubeUp"));
-    RootComponent = TubeUp;
-    TubeUp->SetFlipbook(TubeFlipbook);
-    TubeUp->SetRelativeRotation(FRotator(180.0f, 0.0f, 0.0f));
-    FVector SizeCollisionTube = FVector(50.0f, 50.0f, 500.0f);
-
+    tubeUp = CreateDefaultSubobject<UPaperFlipbookComponent>(TEXT("tubeUp"));
+    RootComponent = tubeUp;
+    tubeUp->SetFlipbook(tubeFlipbook);
+    tubeUp->SetRelativeRotation(FRotator(180.0f, 0.0f, 0.0f));
+    FVector sizeCollisionTube = FVector(50.0f, 50.0f, 500.0f);
     //Настройка коллизии верхней трубы
-    CollisionBoxUp = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionBoxUp"));
-    CollisionBoxUp->SetupAttachment(RootComponent);
-    CollisionBoxUp->SetBoxExtent(SizeCollisionTube);
-
+    collisionBoxUp = CreateDefaultSubobject<UBoxComponent>(TEXT("collisionBoxUp"));
+    collisionBoxUp->SetupAttachment(RootComponent);
+    collisionBoxUp->SetBoxExtent(sizeCollisionTube);
     //Создание нижней трубы
-    TubeDown = CreateDefaultSubobject<UPaperFlipbookComponent>(TEXT("TubeDown"));
-    TubeDown->SetFlipbook(TubeFlipbook);
-    TubeDown->SetRelativeRotation(FRotator(180.0f, 0.0f, 0.0f));
-    TubeDown->SetupAttachment(RootComponent);
-
+    tubeDown = CreateDefaultSubobject<UPaperFlipbookComponent>(TEXT("tubeDown"));
+    tubeDown->SetFlipbook(tubeFlipbook);
+    tubeDown->SetRelativeRotation(FRotator(180.0f, 0.0f, 0.0f));
+    tubeDown->SetupAttachment(RootComponent);
     //Настройка коллизии нижней трубы
-    CollisionBoxDown = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionBoxDown"));
-    CollisionBoxDown->SetupAttachment(TubeDown);
-    CollisionBoxDown->SetBoxExtent(SizeCollisionTube);
+    collisionBoxDown = CreateDefaultSubobject<UBoxComponent>(TEXT("collisionBoxDown"));
+    collisionBoxDown->SetupAttachment(tubeDown);
+    collisionBoxDown->SetBoxExtent(sizeCollisionTube);
 
-    float Offset = 1400.0f; // Расстояние между трубами
-    FVector RelativeLocation = FVector(0.0f, 0.0f, Offset);
-    TubeDown->AddRelativeLocation(RelativeLocation);// Расположение труб на дистанции
+    float offset = 1400.0f; // Расстояние между трубами
+    FVector relativeLocation = FVector(0.0f, 0.0f, offset);
+    tubeDown->AddRelativeLocation(relativeLocation);// Расположение труб на дистанции
 
     //Настройка коллизии для добавления очков
-    ScoreCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("ScoreCollision"));
-    ScoreCollision->SetupAttachment(RootComponent);
+    scoreCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("ScoreCollision"));
+    scoreCollision->SetupAttachment(RootComponent);
     FVector SizeCollisionScore = FVector(10.0f, 10.0f, 170.0f);
-    ScoreCollision->SetBoxExtent(SizeCollisionScore);
+    scoreCollision->SetBoxExtent(SizeCollisionScore);
     //Расположение коллизии очков между трубами с небольшим смещением
-    RelativeLocation = FVector(-45.0f, 0.0f, Offset / 2);
-    ScoreCollision->AddRelativeLocation(RelativeLocation);
+    relativeLocation = FVector(-45.0f, 0.0f, offset / 2);
+    scoreCollision->AddRelativeLocation(relativeLocation);
 
-    SpeedTube = 0.0f;
+    speedTube = 0.0f;
 }
 
 void ATube::BeginPlay()
 {
     Super::BeginPlay();
-    SpeedTube = -300.0f;
+    speedTube = -300.0f;
 }
 
-UBoxComponent* ATube::GetScoreCollision()
+UBoxComponent* ATube::getScoreCollision()
 {
-    return ScoreCollision;
+    return scoreCollision;
 }
 
-UBoxComponent* ATube::GetCollisionBoxUp()
+UBoxComponent* ATube::getCollisionBoxUp()
 {
-    return CollisionBoxUp;
+    return collisionBoxUp;
 }
 
-UBoxComponent* ATube::GetCollisionBoxDown()
+UBoxComponent* ATube::getCollisionBoxDown()
 {
-    return CollisionBoxDown;
+    return collisionBoxDown;
 }
 
-void ATube::Tick(float DeltaTime)
+void ATube::Tick(float deltaTime)
 {
-    Super::Tick(DeltaTime);
+    Super::Tick(deltaTime);
     //Сдвиг трубы к птице
-    FVector NewTubeLocation = GetActorLocation();
-    NewTubeLocation.X += DeltaTime * SpeedTube;
-    SetActorLocation(NewTubeLocation);
+    FVector newTubeLocation = GetActorLocation();
+    newTubeLocation.X += deltaTime * speedTube;
+    SetActorLocation(newTubeLocation);
 }

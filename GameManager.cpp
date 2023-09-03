@@ -1,184 +1,163 @@
 #include "GameManager.h"
 
-
 AGameManager::AGameManager()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	FVector SizeBox3d = FVector(200.0f, 50.0f, 50.0f);
-
+	FVector sizeBox3d = FVector(200.0f, 50.0f, 50.0f);
 	//Коллизия для неба
-	CollisionBoxSky = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionBoxSky"));
-	CollisionBoxSky->SetBoxExtent(SizeBox3d);
-	CollisionBoxSky->SetupAttachment(RootComponent);
-
+	collisionBoxSky = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionBoxSky"));
+	collisionBoxSky->SetBoxExtent(sizeBox3d);
+	collisionBoxSky->SetupAttachment(RootComponent);
 	//Коллизия для земли
-	CollisionBoxGround = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionBoxGround"));
-	CollisionBoxGround->SetBoxExtent(SizeBox3d);
-	CollisionBoxGround->SetupAttachment(CollisionBoxSky);
+	collisionBoxGround = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionBoxGround"));
+	collisionBoxGround->SetBoxExtent(sizeBox3d);
+	collisionBoxGround->SetupAttachment(collisionBoxSky);
 
-	DistanceBetweenPipes = 600.0f;
-
+	distanceBetweenPipes = 600.0f;
 	score = 0;
+	countTube = 5;
+	minPipeHeight = 250.f;
+	maxPipeHeight = 800.f;
 }
-
 
 void AGameManager::BeginPlay()
 {
 	Super::BeginPlay();
-
 	//Создание виджета StartMenu и размещение на карте
-	StartMenuWidget = CreateWidget<UUserWidget>(GetWorld(), MainMenu);
-	StartMenuScoreBlock = Cast<UTextBlock>(StartMenuWidget->GetWidgetFromName(TEXT("ScoreTextBlockWidget")));
-	if (StartMenuWidget)
-	{
-		StartMenuWidget->AddToViewport();
+	startMenuWidget = CreateWidget<UUserWidget>(GetWorld(), mainMenu);
+	
+	if (startMenuWidget) {
+		startMenuScoreBlock = Cast<UTextBlock>(startMenuWidget->GetWidgetFromName(TEXT("ScoreTextBlockWidget")));
+		startMenuWidget->AddToViewport();
 	}
-
 	////Создание виджета GameOver и размещение на карте
-	GameOverWidget = CreateWidget<UUserWidget>(GetWorld(), GameOver);
-	if (GameOverWidget)
-	{
-		GameOverWidget->AddToViewport();
+	gameOverWidget = CreateWidget<UUserWidget>(GetWorld(), gameOver);
+	if (gameOverWidget) {	
+		gameOverWidget->AddToViewport();
+		gameOverScoreBlock = Cast<UTextBlock>(gameOverWidget->GetWidgetFromName(TEXT("GameOverScoreBlock")));
 	}
-	GameOverScoreBlock = Cast<UTextBlock>(GameOverWidget->GetWidgetFromName(TEXT("GameOverScoreBlock")));
-	GameOverWidget->SetVisibility(ESlateVisibility::Collapsed);//Скрытие виджета GameOver 
-
+	gameOverWidget->SetVisibility(ESlateVisibility::Collapsed);//Скрытие виджета GameOver 
 	// Поиск птицы и передача ей ссылки на GameManager
-	Bird = Cast<ABird>(UGameplayStatics::GetActorOfClass(GetWorld(), ABird::StaticClass()));
-	Bird->SetGameManager(this);
-	Bird->GravitationOFF();
-
-	if (Bird)
-	{
-		FVector BirdPosition = Bird->GetActorLocation();
+	bird = Cast<ABird>(UGameplayStatics::GetActorOfClass(GetWorld(), ABird::StaticClass()));
+	bird->setGameManager(this);
+	bird->gravitationOFF();
+	if (bird) {
+		FVector BirdPosition = bird->GetActorLocation();
 		float DistanceFromTheBird = 500.f;
 		//Установка заднего фона	
-		Background = GetWorld()->SpawnActor<ABackground>();
-		Background->SetActorRelativeLocation(FVector(BirdPosition.X, BirdPosition.Y - DistanceFromTheBird, BirdPosition.Z));
+		background = GetWorld()->SpawnActor<ABackground>();
+		background->SetActorRelativeLocation(FVector(BirdPosition.X, BirdPosition.Y - DistanceFromTheBird, BirdPosition.Z));
 		//Установка позиций коллизий неба и земли
 		float DistanceFromBoxSky = 700.0f;
 		float DistanceFromBoxGround = 1200.0f;
-		CollisionBoxSky->SetWorldLocation(FVector(BirdPosition.X, BirdPosition.Y, BirdPosition.Z + DistanceFromBoxSky));
-		CollisionBoxGround->SetWorldLocation(FVector(BirdPosition.X, BirdPosition.Y, BirdPosition.Z - DistanceFromBoxGround));
-
-		RestartGame();
+		collisionBoxSky->SetWorldLocation(FVector(BirdPosition.X, BirdPosition.Y, BirdPosition.Z + DistanceFromBoxSky));
+		collisionBoxGround->SetWorldLocation(FVector(BirdPosition.X, BirdPosition.Y, BirdPosition.Z - DistanceFromBoxGround));
+		restartGame();
 	}
 }
 
-void AGameManager::DestroyTubeFromViewport()
+void AGameManager::destroyTubeFromViewport()
 {
-	if (!TubeQueue.IsEmpty())// очистка труб
-	{
-		ATube* Pipe;
-		for (int i = 0; i < countTube; i++)
-		{
-			TubeQueue.Dequeue(Pipe);
-			Pipe->Destroy();
+	// Удаление труб
+	if (!tubeQueue.IsEmpty()){
+		ATube* pipe;
+		for (int i = 0; i < countTube; i++) {
+			tubeQueue.Dequeue(pipe);
+			pipe->Destroy();
 		}
 	}
 }
 
-void AGameManager::StartSpawnTube()
+void AGameManager::startSpawnTube()
 {
-	UWorld* World = GetWorld();
-
-	if (World)
-	{
+	UWorld* world = GetWorld();
+	if (world) {
 		//Случайное начальное число
-		RandomStream.GenerateNewSeed();
+		randomStream.GenerateNewSeed();
 
-		FRotator SpawnRotation = FRotator(0.0f, 0.0f, 0.0f);
-		FActorSpawnParameters SpawnParams;
-		SpawnParams.Owner = this;
+		FRotator spawnRotation = FRotator(0.0f, 0.0f, 0.0f);
+		FActorSpawnParameters spawnParams;
+		spawnParams.Owner = this;
 
-		FVector LocationTube = Bird->GetActorLocation();
-		float DistanceFromTheBird = 1300;// Дистация создания трубы от птицы
-		LocationTube.X += DistanceFromTheBird;
-
-		for (int i = 0; i < countTube; i++)// Создание труб на карте
-		{
-			float MinPipeHeight = 250.f;
-			float MaxPipeHeight = 800.f;
+		FVector locationTube = bird->GetActorLocation();
+		float distanceFromTheBird = 1300;// Дистация создания трубы от птицы
+		locationTube.X += distanceFromTheBird;
+		// Создание труб на карте
+		for (int i = 0; i < countTube; i++) {
 
 			// случайное число в заданном диапазоне 
-			LocationTube.Z = RandomStream.FRandRange(MinPipeHeight, MaxPipeHeight); 
+			locationTube.Z = randomStream.FRandRange(minPipeHeight, maxPipeHeight); 
 			// Создание труб на карте и добавление их в очередь
-			ATube* Pipe = World->SpawnActor<ATube>(ATube::StaticClass(), LocationTube, SpawnRotation, SpawnParams);
-			TubeQueue.Enqueue(Pipe);
-			LocationTube.X += DistanceBetweenPipes;
+			ATube* pipe = world->SpawnActor<ATube>(ATube::StaticClass(), locationTube, spawnRotation, spawnParams);
+			tubeQueue.Enqueue(pipe);
+			locationTube.X += distanceBetweenPipes;
 		}
 	}
 }
 
-void AGameManager::EndOfQueue()
+void AGameManager::endOfQueue()
 {
-	FVector BirdLocation = Bird->GetActorLocation();
-
-	ATube* FirstTube = nullptr;
-	TubeQueue.Peek(FirstTube);
-	float DistanceFromTheBird = 1000;
+	FVector birdLocation = bird->GetActorLocation();
+	ATube* firstTube = nullptr;
+	tubeQueue.Peek(firstTube);
+	float distanceFromTheBird = 1000;
 	// перемещение трубы в конец очереди если она далеко за спиной птицы
-	if (FirstTube != nullptr && BirdLocation.X > FirstTube->GetActorLocation().X + DistanceFromTheBird)
-	{
+	if (firstTube != nullptr && birdLocation.X > firstTube->GetActorLocation().X + distanceFromTheBird) {
 		//Случайное начальное число
-		RandomStream.GenerateNewSeed();
-		float MinPipeHeight = 250.f;
-		float MaxPipeHeight = 800.f;
+		randomStream.GenerateNewSeed();
 
-		FVector TempLocation = FirstTube->GetActorLocation();
-		TempLocation.X += DistanceBetweenPipes * countTube;
-		TempLocation.Z = RandomStream.FRandRange(MinPipeHeight, MaxPipeHeight);
-		TubeQueue.Dequeue(FirstTube);
-		TubeQueue.Enqueue(FirstTube);
-
-		FirstTube->SetActorLocation(TempLocation);
+		FVector tempLocation = firstTube->GetActorLocation();
+		tempLocation.X += distanceBetweenPipes * countTube;
+		tempLocation.Z = randomStream.FRandRange(minPipeHeight, maxPipeHeight);
+		tubeQueue.Dequeue(firstTube);
+		tubeQueue.Enqueue(firstTube);
+		firstTube->SetActorLocation(tempLocation);
 	}
 }
 
-void AGameManager::RestartGame()
+void AGameManager::restartGame()
 {
-	DestroyTubeFromViewport();
-	GameOverWidget->SetVisibility(ESlateVisibility::Collapsed);
-	StartMenuWidget->SetVisibility(ESlateVisibility::Visible);
+	destroyTubeFromViewport();
+	gameOverWidget->SetVisibility(ESlateVisibility::Collapsed);
+	startMenuWidget->SetVisibility(ESlateVisibility::Visible);
 	//Обновление счета в 0
 	score = 0;
-	StartMenuScoreBlock->SetText(FText::AsNumber(score));
+	startMenuScoreBlock->SetText(FText::AsNumber(score));
 	//Установка птицы в начальное положение
-	Bird->SetActorLocation(FVector(0.0f, 0.0f, 0.0f));
+	bird->SetActorLocation(FVector(0.0f, 0.0f, 0.0f));
 	UGameplayStatics::SetGamePaused(GetWorld(), false);
 }
 
-void AGameManager::IncrementScore()
+void AGameManager::incrementScore()
 {
-	StartMenuScoreBlock->SetText(FText::AsNumber(++score));
+	startMenuScoreBlock->SetText(FText::AsNumber(++score));
 }
 
-void AGameManager::ShowDeathMenu()
+void AGameManager::showDeathMenu()
 {
 	//Показ количества набранных очков
-	FString ScoreText = FString::Printf(TEXT("Score: %d"), score);
-	GameOverScoreBlock->SetText(FText::FromString(ScoreText));
+	FString scoreText = FString::Printf(TEXT("Score: %d"), score);
+	gameOverScoreBlock->SetText(FText::FromString(scoreText));
 
-	StartMenuWidget->SetVisibility(ESlateVisibility::Collapsed);
-	GameOverWidget->SetVisibility(ESlateVisibility::Visible);
+	startMenuWidget->SetVisibility(ESlateVisibility::Collapsed);
+	gameOverWidget->SetVisibility(ESlateVisibility::Visible);
 	UGameplayStatics::SetGamePaused(GetWorld(), true); 
-	Bird->GravitationOFF();
+	bird->gravitationOFF();
 }
 
-UBoxComponent* AGameManager::GetCollisionBoxSky()
+UBoxComponent* AGameManager::getCollisionBoxSky()
 {
-	return CollisionBoxSky;
+	return collisionBoxSky;
 }
 
-UBoxComponent* AGameManager::GetCollisionBoxGround()
+UBoxComponent* AGameManager::getCollisionBoxGround()
 {
-	return CollisionBoxGround;
+	return collisionBoxGround;
 }
 
-void AGameManager::Tick(float DeltaTime)
+void AGameManager::Tick(float deltaTime)
 {
-	Super::Tick(DeltaTime);
-
-	EndOfQueue();
+	Super::Tick(deltaTime);
+	endOfQueue();
 }

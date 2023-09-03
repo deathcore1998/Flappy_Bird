@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -17,73 +16,52 @@
 #include "Blueprint/UserWidget.h"
 #include "GameManager.generated.h"
 
-
-
 UCLASS()
 class FLAPPY_BIRD_API AGameManager : public AActor
 {
 	GENERATED_BODY()
 
-public:
-	AGameManager();
-
 protected:
-
 	virtual void BeginPlay() override;
 
 private:
-
-	void EndOfQueue();
-
-	TQueue<ATube*> TubeQueue;
-
-	float DistanceBetweenPipes;
-
-	int countTube = 5;
-
-	FRandomStream RandomStream;
-
-	ABackground* Background;
-
-	ABird* Bird;
-
-	UBoxComponent* CollisionBoxSky;
-
-	UBoxComponent* CollisionBoxGround;
-
-	UPROPERTY(EditAnywhere, Category = "Widgets")
-		TSubclassOf<UUserWidget> MainMenu;
-
-	UUserWidget* StartMenuWidget;
-
-	UTextBlock* StartMenuScoreBlock;
-
-	UPROPERTY(EditAnywhere, Category = "Widgets")
-		TSubclassOf<UUserWidget> GameOver;
-
-	UUserWidget* GameOverWidget;
-
-	UTextBlock* GameOverScoreBlock;
-
-	int score;
-
-	void DestroyTubeFromViewport();
-
+	void destroyTubeFromViewport();
 	friend class ABird;
-	void IncrementScore();
+	void incrementScore();
+	void showDeathMenu();
+	void startSpawnTube();
+	void endOfQueue();
 
-	void ShowDeathMenu();
+private:
+	TQueue<ATube*> tubeQueue;
+	FRandomStream randomStream;
+	ABackground* background;
+	ABird* bird;
 
-	void StartSpawnTube();
+	float distanceBetweenPipes;
+	int countTube;
+	int score;
+	float minPipeHeight;
+	float maxPipeHeight;
+
+	UBoxComponent* collisionBoxSky;
+	UBoxComponent* collisionBoxGround;
+
+	UPROPERTY(EditAnywhere, Category = "Widgets")
+		TSubclassOf<UUserWidget> mainMenu;
+	UUserWidget* startMenuWidget;
+	UTextBlock* startMenuScoreBlock;
+	UPROPERTY(EditAnywhere, Category = "Widgets")
+		TSubclassOf<UUserWidget> gameOver;
+	UUserWidget* gameOverWidget;
+	UTextBlock* gameOverScoreBlock;
 
 public:
-
+	AGameManager();
 	UFUNCTION(BlueprintCallable)
-		void RestartGame();
+		void restartGame();
 
-	UBoxComponent* GetCollisionBoxSky();
-
-	UBoxComponent* GetCollisionBoxGround();
-
-	virtual void Tick(float DeltaTime) override;
+	UBoxComponent* getCollisionBoxSky();
+	UBoxComponent* getCollisionBoxGround();
+	virtual void Tick(float deltaTime) override;
 };

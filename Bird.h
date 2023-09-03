@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -26,50 +24,36 @@ class FLAPPY_BIRD_API ABird : public APaperCharacter
 {
 	GENERATED_BODY()
 
-		class UCameraComponent* SideViewCameraComponent;
-
-	class USpringArmComponent* CameraBoom;
-
-	class UPaperFlipbookComponent* BirdFlipbook;
-
-	virtual void Tick(float DeltaTime) override;
-
-	virtual void BeginPlay() override;
-
-	void MyJump();
+private:
+	class UCameraComponent* sideViewCameraComponent;
+	class USpringArmComponent* cameraBoom;
+	class UPaperFlipbookComponent* birdFlipbook;
+	class UPaperFlipbook* animationBird;
 
 protected:
 	UFUNCTION()
-		void OnBirdCollision(UPrimitiveComponent* OverlappendComp, AActor* OtherActor,
-			UPrimitiveComponent* otherComp, int32 OtherBodeIndex, bool bFromSweep, const FHitResult& SweepResult);
-
+		void onBirdCollision(UPrimitiveComponent* overlappendComp, AActor* otherActor,
+			UPrimitiveComponent* otherComp, int32 otherBodeIndex, bool bFromSweep, const FHitResult& sweepResult);
 	UFUNCTION()
-		void IncrementScore(UPrimitiveComponent* OverlappendComp, AActor* OtherActor,
-			UPrimitiveComponent* otherComp, int32 OtherBodeIndex, bool bFromSweep, const FHitResult& SweepResult);
+		void incrementScore(UPrimitiveComponent* overlappendComp, AActor* OtherActor,
+			UPrimitiveComponent* otherComp, int32 otherBodeIndex, bool bFromSweep, const FHitResult& sweepResult);
 
-	class UPaperFlipbook* AnimationBird;
-
-	virtual void SetupPlayerInputComponent(class UInputComponent* InputComponent) override;
-
+	virtual void SetupPlayerInputComponent(class UInputComponent* inputComponent) override;
 	bool CanJumpInternal_Implementation() const override;
+	void myJump();
+	virtual void BeginPlay() override;
 
-	AGameManager* GameManager;
+private:
+	AGameManager* gameManager;
+	USoundWave* jumpSoundWave;
+	USoundWave* dieSoundWave;
+	USoundWave* pointSoundWave;
 
-	bool Gravity;
-
-	USoundWave* JumpSoundWave;
-
-	USoundWave* DieSoundWave;
-
-	USoundWave* PointSoundWave;
-
+	bool gravity;
 public:
-
 	ABird();
-
-	void SetGameManager(AGameManager* Manager);
-
-	void GravitationON();
-
-	void GravitationOFF();
+	virtual void Tick(float deltaTime) override;
+	void setGameManager(AGameManager* manager);
+	void gravitationON();
+	void gravitationOFF();
 };

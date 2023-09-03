@@ -1,147 +1,130 @@
-
 #include "Bird.h"
 #include "GameManager.h"
-
 
 ABird::ABird()
 {
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = true;
 	bUseControllerRotationRoll = false;
-
 	// Утановка коллизии птицы
 	GetCapsuleComponent()->SetCapsuleHalfHeight(55.0f);
 	GetCapsuleComponent()->SetCapsuleRadius(55.0f);
-
 	// Камерабум
-	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
-	CameraBoom->SetUsingAbsoluteRotation(true);
-	CameraBoom->bDoCollisionTest = false;
-	CameraBoom->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
-
+	cameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("cameraBoom"));
+	cameraBoom->SetUsingAbsoluteRotation(true);
+	cameraBoom->bDoCollisionTest = false;
+	cameraBoom->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
 	//Создание птицы и установка Flipbook 
-	BirdFlipbook = CreateDefaultSubobject<UPaperFlipbookComponent>(TEXT("BirdFlipbook"));
-	BirdFlipbook->SetupAttachment(RootComponent);
-	AnimationBird = LoadObject<UPaperFlipbook>(nullptr, TEXT("/Game/FlipBook/Bird.Bird"));
-	BirdFlipbook->SetFlipbook(AnimationBird);
+	birdFlipbook = CreateDefaultSubobject<UPaperFlipbookComponent>(TEXT("BirdFlipbook"));
+	birdFlipbook->SetupAttachment(RootComponent);
+	animationBird = LoadObject<UPaperFlipbook>(nullptr, TEXT("/Game/FlipBook/Bird.Bird"));
+	birdFlipbook->SetFlipbook(animationBird);
 
-	SideViewCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("SideViewCamera"));
-	SideViewCameraComponent->ProjectionMode = ECameraProjectionMode::Orthographic;
-	SideViewCameraComponent->OrthoWidth = 2100;//2100
-	SideViewCameraComponent->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
+	sideViewCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("SideViewCamera"));
+	sideViewCameraComponent->ProjectionMode = ECameraProjectionMode::Orthographic;
+	sideViewCameraComponent->OrthoWidth = 2100;//2100
+	sideViewCameraComponent->SetupAttachment(cameraBoom, USpringArmComponent::SocketName);
 
-	CameraBoom->SetUsingAbsoluteRotation(true);
-	SideViewCameraComponent->bUsePawnControlRotation = false;
-	SideViewCameraComponent->bAutoActivate = true;
+	cameraBoom->SetUsingAbsoluteRotation(true);
+	sideViewCameraComponent->bUsePawnControlRotation = false;
+	sideViewCameraComponent->bAutoActivate = true;
 	GetCharacterMovement()->bOrientRotationToMovement = false;
-
 	// Гравитация и сила прыжка
 	GetCharacterMovement()->GravityScale = 0.0f;
 	GetCharacterMovement()->JumpZVelocity = 900.f;
-
 	//Флаг включена гравитация или нет
-	Gravity = false;
-
+	gravity = false;
 	// Загрузка звуковых файлов
-	JumpSoundWave = LoadObject<USoundWave>(nullptr, TEXT("/Game/Sound/jump.jump"));
-	DieSoundWave = LoadObject<USoundWave>(nullptr, TEXT("/Game/Sound/die.die"));
-	PointSoundWave = LoadObject<USoundWave>(nullptr, TEXT("/Game/Sound/point.point"));
+	jumpSoundWave = LoadObject<USoundWave>(nullptr, TEXT("/Game/Sound/jump.jump"));
+	dieSoundWave = LoadObject<USoundWave>(nullptr, TEXT("/Game/Sound/die.die"));
+	pointSoundWave = LoadObject<USoundWave>(nullptr, TEXT("/Game/Sound/point.point"));
 }
 
-
-void ABird::Tick(float DeltaTime)
+void ABird::Tick(float deltaTime)
 {
-	Super::Tick(DeltaTime);
+	Super::Tick(deltaTime);
 }
 
 void ABird::BeginPlay()
 {
 	Super::BeginPlay();
 
-	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &ABird::OnBirdCollision);
-	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &ABird::IncrementScore);
-	FVector BirdPosition = GetActorLocation();
-	CameraBoom->SetWorldLocation(FVector(BirdPosition.X, BirdPosition.Y, BirdPosition.Z - 200));
+	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &ABird::onBirdCollision);
+	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &ABird::incrementScore);
+	FVector birdPosition = GetActorLocation();
+	cameraBoom->SetWorldLocation(FVector(birdPosition.X, birdPosition.Y, birdPosition.Z - 200));
 }
 
-void ABird::MyJump()
+void ABird::myJump()
 {
 	Super::Jump();
 
-	if (Gravity == false)
-	{
-		GravitationON();
-		GameManager->StartSpawnTube();
+	if (gravity == false) {
+		gravitationON();
+		gameManager->startSpawnTube();
 	}
-
-	if (JumpSoundWave)	// Проверка наличия звукового файла
-	{
-		UGameplayStatics::PlaySound2D(this, JumpSoundWave);//Воспроизведение звука
+	// Проверка наличия звукового файла
+	if (jumpSoundWave) {
+		UGameplayStatics::PlaySound2D(this, jumpSoundWave);//Воспроизведение звука
 	}
 }
 
-void ABird::SetGameManager(AGameManager* Manager)
+void ABird::setGameManager(AGameManager* manager)
 {
-	GameManager = Manager;
+	gameManager = manager;
 }
 
-void ABird::GravitationON()
+void ABird::gravitationON()
 {
 	GetCharacterMovement()->GravityScale = 2.0f;
-	Gravity = true;
+	gravity = true;
 }
 
-void ABird::GravitationOFF()
+void ABird::gravitationOFF()
 {
 	GetCharacterMovement()->GravityScale = 0.0f;
-
 	// Сброс вертикальной скорости
 	GetCharacterMovement()->Velocity.Z = 0.0f;
-	Gravity = false;
+	gravity = false;
 }
 
-void ABird::OnBirdCollision(UPrimitiveComponent* OverlappendComp, AActor* OtherActor, UPrimitiveComponent* otherComp, int32 OtherBodeIndex, bool bFromSweep, const FHitResult& SweepResult)
+void ABird::onBirdCollision(UPrimitiveComponent* overlappendComp, AActor* otherActor, UPrimitiveComponent* otherComp, int32 otherBodeIndex, bool bFromSweep, const FHitResult& sweepResult)
 {
-	if (OtherActor)//Проврека на возникновение столкновения
-	{
-		UBoxComponent* CollisionUp = nullptr;
-		UBoxComponent* CollisionDown = nullptr;
-
-		if (OtherActor->IsA(ATube::StaticClass()))// столкновение с трубами
-		{
-			CollisionUp = Cast<ATube>(OtherActor)->GetCollisionBoxUp();
-			CollisionDown = Cast<ATube>(OtherActor)->GetCollisionBoxDown();
+	//Проврека на возникновение столкновения
+	if (otherActor) {
+		UBoxComponent* collisionUp = nullptr;
+		UBoxComponent* collisionDown = nullptr;
+		
+		if (otherActor->IsA(ATube::StaticClass())) { // столкновение с трубами
+			collisionUp = Cast<ATube>(otherActor)->getCollisionBoxUp();
+			collisionDown = Cast<ATube>(otherActor)->getCollisionBoxDown();
 		}
-		else if (OtherActor->IsA(AGameManager::StaticClass()))// столкновение с заемлей или небом
-		{
-			CollisionUp = Cast<AGameManager>(OtherActor)->GetCollisionBoxSky();
-			CollisionDown = Cast<AGameManager>(OtherActor)->GetCollisionBoxGround();
+		else if (otherActor->IsA(AGameManager::StaticClass())) {// столкновение с заемлей или небом	
+			collisionUp = Cast<AGameManager>(otherActor)->getCollisionBoxSky();
+			collisionDown = Cast<AGameManager>(otherActor)->getCollisionBoxGround();
 		}
-
-		if (CollisionUp && otherComp == CollisionUp || CollisionDown && otherComp == CollisionDown)//Если одно из столкновений было
-		{
+		//Если одно из столкновений было
+		if (collisionUp && otherComp == collisionUp || collisionDown && otherComp == collisionDown) {
 			// отрабатывается логика смерти
-			GameManager->ShowDeathMenu();
-			if (DieSoundWave)	// Проверка наличия звукового файла
-			{
-				UGameplayStatics::PlaySound2D(this, DieSoundWave);//Воспроизведение звука
+			gameManager->showDeathMenu();
+			if (dieSoundWave) {// Проверка наличия звукового файла	
+				UGameplayStatics::PlaySound2D(this, dieSoundWave);//Воспроизведение звука
 			}
 		}
 	}
 }
 
-void ABird::IncrementScore(UPrimitiveComponent* OverlappendComp, AActor* OtherActor, UPrimitiveComponent* otherComp, int32 OtherBodeIndex, bool bFromSweep, const FHitResult& SweepResult)
+void ABird::incrementScore(UPrimitiveComponent* overlappendComp, AActor* otherActor, UPrimitiveComponent* otherComp, int32 otherBodeIndex, bool bFromSweep, const FHitResult& sweepResult)
 {
-	if (OtherActor && OtherActor->IsA(ATube::StaticClass()))//столкновение с коллизией счета 
-	{
-		UBoxComponent* IncrScore = Cast<ATube>(OtherActor)->GetScoreCollision();
-
-		if (IncrScore && otherComp == IncrScore)//Проврека на возникновение столкновения
-		{
-			GameManager->IncrementScore();
-			if (PointSoundWave)	// Проверка наличия звукового файла
-			{
-				UGameplayStatics::PlaySound2D(this, PointSoundWave);//Воспроизведение звука
+	//столкновение с коллизией счета 
+	if (otherActor && otherActor->IsA(ATube::StaticClass())) {
+		UBoxComponent* incrScore = Cast<ATube>(otherActor)->getScoreCollision();
+		//Проврека на возникновение столкновения
+		if (incrScore && otherComp == incrScore) {
+			gameManager->incrementScore();
+			// Проверка наличия звукового файла
+			if (pointSoundWave) {	
+				UGameplayStatics::PlaySound2D(this, pointSoundWave);//Воспроизведение звука
 			}
 		}
 	}
@@ -149,7 +132,7 @@ void ABird::IncrementScore(UPrimitiveComponent* OverlappendComp, AActor* OtherAc
 
 void ABird::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ABird::MyJump);
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ABird::myJump);
 }
 
 bool ABird::CanJumpInternal_Implementation() const

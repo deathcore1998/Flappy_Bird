@@ -1,6 +1,5 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
+
 #include "CoreMinimal.h"
 #include "PaperFlipbookComponent.h"
 #include "PaperFlipbook.h"
@@ -13,35 +12,21 @@ class FLAPPY_BIRD_API ATube : public AActor
 {
 	GENERATED_BODY()
 
-public:
-
-	ATube();
-
 protected:
-
 	virtual void BeginPlay() override;
 
-	float SpeedTube;
-
-	UBoxComponent* CollisionBoxUp;
-
-	UBoxComponent* CollisionBoxDown;
-
-	UBoxComponent* ScoreCollision;
-
-	class UPaperFlipbookComponent* TubeUp;
-
-	class UPaperFlipbookComponent* TubeDown;
-
-	class UPaperFlipbook* TubeFlipbook;
+	float speedTube;
+	UBoxComponent* collisionBoxUp;
+	UBoxComponent* collisionBoxDown;
+	UBoxComponent* scoreCollision;
+	class UPaperFlipbookComponent* tubeUp;
+	class UPaperFlipbookComponent* tubeDown;
+	class UPaperFlipbook* tubeFlipbook;
 
 public:
-
-	UBoxComponent* GetScoreCollision();
-
-	UBoxComponent* GetCollisionBoxUp();
-
-	UBoxComponent* GetCollisionBoxDown();
-
-	virtual void Tick(float DeltaTime) override;
+	UBoxComponent* getScoreCollision();
+	UBoxComponent* getCollisionBoxUp();
+	UBoxComponent* getCollisionBoxDown();
+	ATube();
+	virtual void Tick(float deltaTime) override;
 };

@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -13,14 +12,10 @@ class FLAPPY_BIRD_API ABackground : public AActor
 	GENERATED_BODY()
 
 public:
-
 	ABackground();
 
 protected:
-
 	virtual void BeginPlay() override;
-
-	class UPaperFlipbookComponent* BackGround;
-
-	class UPaperFlipbook* BackGroundFlipbook;
+	class UPaperFlipbookComponent* backGround;
+	class UPaperFlipbook* backGroundFlipbook;
 };
